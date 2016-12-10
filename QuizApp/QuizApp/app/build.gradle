@@ -1,0 +1,59 @@
+apply plugin: 'com.android.application'
+
+repositories {
+    maven { url "http://dl.bintray.com/populov/maven" }
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "de.hwr_berlin.quizapp"
+        minSdkVersion 16
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0 " + ('git rev-parse --short HEAD'.execute().text.replace('\n',''))
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // https://github.com/FasterXML/jackson-databind/issues/553
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    // Support
+    compile 'com.android.support:appcompat-v7:22.2.1',
+            'com.android.support:design:22.2.1',
+            'com.android.support:cardview-v7:22.2.1',
+            'com.android.support:recyclerview-v7:22.2.1',
+            'com.android.support:gridlayout-v7:22.2.1',
+            'com.android.support:support-v4:22.2.1'
+    // JSON marshaling
+    compile 'com.fasterxml.jackson.core:jackson-core:2.7.2',
+            'com.fasterxml.jackson.core:jackson-annotations:2.7.2',
+            'com.fasterxml.jackson.core:jackson-databind:2.7.2'
+    // Eventbus
+    compile 'org.greenrobot:eventbus:3.0.0'
+    // Main Activity CirclePageIndicator
+    compile 'com.github.JakeWharton:ViewPagerIndicator:2.4.1@aar'
+}
+
+// Server IP stored outside of the git repository
+def SERVER_IP = '"' + server_ip + '"' ?: '"Define Server IP"';
+
+android.buildTypes.each { type ->
+    type.buildConfigField 'String', 'SERVER_IP', SERVER_IP
+}

@@ -1,0 +1,6 @@
+*.o
+*.c
+QuizEditor/QuizEditor
+*/.idea/
+*/gradle.properties
+

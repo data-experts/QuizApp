@@ -1,0 +1,132 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="de.hwr_berlin.quizapp.activities.fragments.QuestionFragment"
+
+    android:weightSum="30"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/question_card"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:elevation="2dp"
+        android:padding="16dp"
+        android:layout_weight="14.3">
+
+        <TextView
+            android:id="@+id/txt_current_game_score"
+            android:transitionName="fragment_question_gs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:gravity="right"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/quest_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="0dp"
+            android:layout_below="@id/txt_current_game_score"
+            android:gravity="left"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
+        <de.hwr_berlin.quizapp.AutoFitText
+            android:id="@+id/quest_question"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="left"
+            android:layout_below="@id/quest_category"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/quiz_categories_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/greyCategoryBackground"
+        android:layout_weight="0.7"
+        android:elevation="2dp"
+        android:clickable="false"
+        android:orientation="horizontal" />
+
+    <android.support.v7.widget.GridLayout
+        android:id="@+id/answers"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="15"
+        android:layout_below="@id/question_card"
+        app:columnCount="1"
+        app:rowCount="4"
+        app:useDefaultMargins="true"
+        app:alignmentMode="alignBounds"
+        app:columnOrderPreserved="false" >
+
+        <Button
+            android:id="@+id/answer1"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            app:layout_columnSpan="1"
+            app:layout_rowSpan="1"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            app:layout_gravity="fill"
+            android:textSize="@dimen/btn_answer_text_size" />
+
+        <Button
+            android:id="@+id/answer2"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            app:layout_columnSpan="1"
+            app:layout_rowSpan="1"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            app:layout_gravity="fill"
+            android:textSize="@dimen/btn_answer_text_size" />
+
+        <Button
+            android:id="@+id/answer3"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            app:layout_columnSpan="1"
+            app:layout_rowSpan="1"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            app:layout_gravity="fill"
+            android:textSize="@dimen/btn_answer_text_size" />
+
+        <Button
+            android:id="@+id/answer4"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            app:layout_columnSpan="1"
+            app:layout_rowSpan="1"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            app:layout_gravity="fill"
+            android:textSize="@dimen/btn_answer_text_size" />
+
+    </android.support.v7.widget.GridLayout>
+
+
+</LinearLayout>

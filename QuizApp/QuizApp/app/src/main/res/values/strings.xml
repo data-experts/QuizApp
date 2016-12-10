@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">QuizApp</string>
+
+    <string name="btn_start">Starte Quiz</string>
+    <string name="btn_highscore">Highscore</string>
+    <string name="btn_support">Support</string>
+    <string name="btn_cancel">Abbrechen</string>
+
+    <string name="legal_header">Softwareinformationen</string>
+    <string name="legal_library_1_title">Jackson</string>
+    <string name="legal_library_1_short">Jackson JSON processor is an Open Source product available under one or more OSS-approved licenses.</string>
+    <string name="legal_library_1_text"><![CDATA[As of version 2.0, Jackson is offered under the Apache 2.0 license only.]]></string>
+    <string name="legal_library_2_title">Greenrobot Eventbus</string>
+    <string name="legal_library_2_short">Android optimized event bus that simplifies communication between Activities, Fragments, Threads, Services, etc.</string>
+    <string name="legal_library_2_text"><![CDATA[Copyright (C) 2012-2016 Markus Junginger, greenrobot (http://greenrobot.org)
+
+        EventBus binaries and source code can be used according to the Apache License, Version 2.0.]]></string>
+    <string name="legal_library_3_title">ViewPagerIndicator</string>
+    <string name="legal_library_3_short">Paging indicator widgets compatible with the ViewPager from the Android Support Library and ActionBarSherlock.</string>
+    <string name="legal_library_3_text"><![CDATA[© 2012 Jake Wharton — @JakeWharton · +JakeWharton
+Developed and distributed under the Apache License, Version 2.0.
+Originally based on widgets developed by Patrik Åkerfeldt.]]></string>
+    <string name="legal_creators"><![CDATA[Ersteller: Fabian Roddeck, Paul Lange, Janik Schmidt & Oscar Ruckdeschel]]></string>
+
+    <string name="hint_input_name">Name</string>
+    <string name="text_congrats">Herzlichen Glückwunsch.</string>
+    <string name="text_points">Punkte</string>
+    <string name="btn_submit_highscore">Upload</string>
+    <string name="btn_share_highscore">Teilen</string>
+    <string name="btn_back_to_main_menu">Hauptmenü</string>
+
+    <string name="error_no_connection">Keine Internetverbindung</string>
+    <string name="error_unknown">Unbekannter Fehler</string>
+    <string name="error_no_name">Kein Name angegeben</string>
+
+    <string name="title_activity_highscore">Highscore Tabelle</string>
+    <string name="title_activity_quiz">Quizfrage</string>
+
+    <string name="back_indicator"><![CDATA[<<]]></string>
+    <string name="forward_indicator"><![CDATA[>>]]></string>
+
+    <string name="upload_highscore_success">Highscore erfolgreich hochgeladen</string>
+    <string name="upload_highscore_failure">Highscore wurde nicht hochgeladen</string>
+
+    <string name="pause_dialog_title">Wirklich beenden?</string>
+    <string name="pause_dialog_content">Wollen Sie das Spiel wirklich beenden. Der Spielstand wird nicht gespeichert.</string>
+    <string name="pause_dialog_positiv">Ja</string>
+    <string name="pause_dialog_negativ">Nein</string>
+
+</resources>

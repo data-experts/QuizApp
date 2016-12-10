@@ -1,0 +1,34 @@
+#include "DBConnection.hpp"
+
+// ANSI color constants
+const char* RESET   = "\033[0m";
+const char* BLACK   = "\033[30m";
+const char* RED     = "\033[31m";
+const char* GREEN   = "\033[32m";
+const char* YELLOW  = "\033[33m";
+const char* BLUE    = "\033[34m";
+const char* MAGENTA = "\033[35m";
+const char* CYAN    = "\033[36m";
+const char* WHITE   = "\033[37m";
+
+// ANSI color constants (bold version)
+const char* BOLDBLACK   = "\033[1m\033[30m";
+const char* BOLDRED     = "\033[1m\033[31m";
+const char* BOLDGREEN   = "\033[1m\033[32m";
+const char* BOLDYELLOW  = "\033[1m\033[33m";
+const char* BOLDBLUE    = "\033[1m\033[34m";
+const char* BOLDMAGENTA = "\033[1m\033[35m";
+const char* BOLDCYAN    = "\033[1m\033[36m";
+const char* BOLDWHITE   = "\033[1m\033[37m";
+
+DBConnection::DBConnection(void) {
+    cout << BLUE << "Connecting to target database: " << RESET << flush;
+    EXEC SQL CONNECT TO 'mydbname@my.domain.de' USER mydbuser IDENTIFIED BY mydbpassword;
+    cout << BOLDGREEN << "CONNECTED\n" << RESET << flush;
+}
+
+DBConnection::~DBConnection(void) {
+    cout << BLUE << "Disconnecting from target database: " << RESET << flush;
+    EXEC SQL DISCONNECT ALL;
+    cout << BOLDRED << "DISCONNECTED\n" << RESET << flush;
+}

@@ -1,0 +1,340 @@
+#include "CategoryTable.hpp"
+#include "CategoryForm.hpp"
+#include "Utils.hpp"
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+    // Table record of CATEGORIES
+    typedef struct {
+        int ID;
+        char NAME[1021];
+    } tCATEGORY;
+
+EXEC SQL END DECLARE SECTION;
+
+void print_ctable_error(void) {
+    attron(COLOR_PAIR(2));
+    mvprintw(0, 0, "%s", sqlca.sqlerrm.sqlerrmc);
+    attroff(COLOR_PAIR(2));
+    refresh();
+    getch();
+    EXEC SQL ROLLBACK;
+}
+
+EXEC SQL WHENEVER SQLERROR CALL print_ctable_error();
+
+CategoryTable::CategoryTable(void) {
+    EXEC SQL DECLARE category_cur SCROLL CURSOR WITH HOLD FOR SELECT * FROM "CATEGORIES" ORDER BY "ID" ASC;
+    EXEC SQL OPEN category_cur;
+
+    getmaxyx(stdscr, max_height, max_width);
+    row_count = max_height - 3;
+    items = new ITEM* [row_count + 1]();
+
+    stringstream ss;
+    ss << setw(4) << right << "ID";
+    ss << "  " << setw(max_width - 8) << left << "CATEGORY";
+    header = ss.str();
+
+    menu = new_menu(items);
+    menu_opts_off(menu, O_SHOWDESC);
+    set_menu_mark(menu, "");
+
+    window = newwin(max_height, max_width, 0, 0);
+    subwin = derwin(window, max_height - 3, max_width - 2, 2, 1);
+
+    wbkgd(window, COLOR_PAIR(3));
+    wbkgd(subwin, COLOR_PAIR(3));
+
+    set_menu_win(menu, window);
+    set_menu_sub(menu, subwin);
+
+    update_items(true);
+}
+
+void CategoryTable::update_items(bool forward) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        const unsigned int MAX_FETCH_SIZE = row_count;
+        const unsigned int MAX_FETCH_SIZE2 = row_count - 1;
+        signed int move = 0;
+        tCATEGORY rec = { 0 };
+        tCATEGORY* recs;
+    EXEC SQL END DECLARE SECTION;
+
+    recs = new tCATEGORY[row_count]();
+
+    if (forward) {
+        EXEC SQL FETCH NEXT FROM category_cur INTO :rec;
+
+        if (rec.ID != 0) {
+            EXEC SQL MOVE BACKWARD category_cur;
+            EXEC SQL FETCH FORWARD :MAX_FETCH_SIZE FROM category_cur INTO :recs;
+
+            rows.clear();
+
+            // free old items
+            for (unsigned int i = 0; i < row_count; i++) {
+                free_item(items[i]);
+            }
+
+            unsigned int i;
+            for (i = 0; i < row_count; i++) {
+                if (recs[i].ID == 0) {
+                    EXEC SQL MOVE BACKWARD category_cur;
+                    break;
+                }
+
+                stringstream ss;
+                string id(to_string(recs[i].ID));
+                ss << setw(4) << right << recs[i].ID;
+                ss << "  " << setw(max_width - 8) << left << utf8_substr(string(recs[i].NAME), 0, max_width - 8);
+
+                rows.insert(pair<string, string>(id, ss.str()));
+                items[i] = new_item(rows.find(id)->second.data(), rows.find(id)->first.data());
+            }
+            items[i] = { 0 };
+
+            set_menu_items(menu, items);
+            set_menu_format(menu, max_height - 3, 1);
+        } else {
+            EXEC SQL MOVE BACKWARD category_cur;
+        }
+    } else {
+        move = -item_count(menu);
+        EXEC SQL FETCH RELATIVE :move FROM category_cur INTO :rec;
+
+        if (rec.ID != 0) {
+            EXEC SQL MOVE FORWARD category_cur;
+            EXEC SQL FETCH BACKWARD :MAX_FETCH_SIZE FROM category_cur INTO :recs;
+            EXEC SQL MOVE FORWARD :MAX_FETCH_SIZE2 category_cur;
+
+            rows.clear();
+
+            // free old items
+            for (unsigned int i = 0; i < row_count; i++) {
+                free_item(items[i]);
+            }
+
+            for (unsigned int i = 0; i < row_count; i++) {
+                stringstream ss;
+                string id(to_string(recs[i].ID));
+                ss << setw(4) << right << recs[i].ID;
+                ss << "  " << setw(max_width - 8) << left << utf8_substr(string(recs[i].NAME), 0, max_width - 8);
+
+                rows.insert(pair<string, string>(id, ss.str()));
+                items[row_count - 1 - i] = new_item(rows.find(id)->second.data(), rows.find(id)->first.data());
+            }
+
+            set_menu_items(menu, items);
+            set_menu_format(menu, max_height - 3, 1);
+        } else {
+            move = -move;
+            EXEC SQL FETCH RELATIVE :move FROM category_cur INTO :rec;
+        }
+    }
+
+    delete recs;
+}
+
+CategoryTable::~CategoryTable(void) {
+    EXEC SQL CLOSE category_cur;
+    
+    unpost_menu(menu);
+    delwin(subwin);
+    delwin(window);
+    free_menu(menu);
+    for (unsigned int i = 0; i < row_count; i++) {
+        free_item(items[i]);
+    }
+    delete[] items;
+}
+
+void CategoryTable::run(void) {
+    box(window, 0, 0);
+    wattron(window, COLOR_PAIR(9));
+    mvwaddstr(window, 1, 1, header.data());
+    wattroff(window, COLOR_PAIR(9));
+
+    post_menu(menu);
+    refresh();
+    wrefresh(window);
+    bool running = true;
+    int input;
+    while (running && (input = getch())) {
+        switch (input) {
+            case KEY_DOWN:
+                if (item_index(current_item(menu)) < item_count(menu) - 1) {
+                    menu_driver(menu, REQ_DOWN_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(true);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_FIRST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case KEY_UP:
+                if (item_index(current_item(menu)) > 0) {
+                    menu_driver(menu, REQ_UP_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(false);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_LAST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case 0x0A: {
+                int id = stoi(item_description(current_item(menu)));
+                update(id);
+                break;
+            }
+            case KEY_DC:
+                if (dialog.prompt()) {
+                    int id = stoi(item_description(current_item(menu)));
+                    del(id);
+                }
+                touchwin(window);
+                wrefresh(window);
+                break;
+            case 0x4e:
+            case 0x6e:
+                insert();
+                break;
+            case 0x51:
+            case 0x71:
+                clear();
+                return;
+        }
+    }
+}
+
+int CategoryTable::popup(void) {
+    box(window, 0, 0);
+    wattron(window, COLOR_PAIR(9));
+    mvwaddstr(window, 1, 1, header.data());
+    wattroff(window, COLOR_PAIR(9));
+
+    post_menu(menu);
+    refresh();
+    wrefresh(window);
+    bool running = true;
+    int input;
+    while (running && (input = getch())) {
+        switch (input) {
+            case KEY_DOWN:
+                if (item_index(current_item(menu)) < item_count(menu) - 1) {
+                    menu_driver(menu, REQ_DOWN_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(true);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_FIRST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case KEY_UP:
+                if (item_index(current_item(menu)) > 0) {
+                    menu_driver(menu, REQ_UP_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(false);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_LAST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case 0x0A: {
+                return stoi(item_description(current_item(menu)));
+            case 0x51:
+            case 0x71:
+                return 0;
+            }
+        }
+    }
+    return 0;
+}
+
+void CategoryTable::del(int id) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        int pID = id;
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL DELETE FROM "CATEGORIES" WHERE "ID"=:pID;
+    EXEC SQL COMMIT;
+
+    EXEC SQL CLOSE category_cur;
+    EXEC SQL OPEN category_cur;
+
+    // Delete old item entries
+    for (unsigned int i = 0; i < row_count; i++) {
+        free_item(items[i]);
+        items[i] = { 0 };
+    }
+
+    unpost_menu(menu);
+    update_items(true);
+    post_menu(menu);
+}
+
+void CategoryTable::update(int id) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        int pID = id;
+        tCATEGORY rec = { 0 };
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL SELECT * INTO :rec FROM "CATEGORIES" WHERE "ID"=:pID;
+    CategoryForm form(rec.NAME, false);
+
+    if (rec.NAME[0] != 0) {
+        EXEC SQL UPDATE "CATEGORIES" SET "NAME"=:rec.NAME WHERE "ID"=:pID;
+        EXEC SQL COMMIT;
+
+        EXEC SQL CLOSE category_cur;
+        EXEC SQL OPEN category_cur;
+
+        // Delete old item entries
+        for (unsigned int i = 0; i < row_count; i++) {
+            free_item(items[i]);
+            items[i] = { 0 };
+        }
+
+        unpost_menu(menu);
+        update_items(true);
+        post_menu(menu);
+    }
+    touchwin(window);
+    wrefresh(window);
+}
+
+void CategoryTable::insert(void) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        tCATEGORY rec = { 0 };
+    EXEC SQL END DECLARE SECTION;
+
+    CategoryForm form(rec.NAME, true);
+
+    if (rec.NAME[0] != 0) {
+        EXEC SQL INSERT INTO "CATEGORIES" ("NAME") VALUES(:rec.NAME);
+        EXEC SQL COMMIT;
+
+        EXEC SQL CLOSE category_cur;
+        EXEC SQL OPEN category_cur;
+
+        // Delete old item entries
+        for (unsigned int i = 0; i < row_count; i++) {
+            free_item(items[i]);
+            items[i] = { 0 };
+        }
+
+        unpost_menu(menu);
+        update_items(true);
+        post_menu(menu);
+    }
+    touchwin(window);
+    wrefresh(window);
+}

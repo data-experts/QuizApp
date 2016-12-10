@@ -1,0 +1,369 @@
+#include "QuestionTable.hpp"
+#include "QuestionForm.hpp"
+#include "Utils.hpp"
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+    typedef struct {
+        int ID;
+        int CID;
+        char QUESTION[1021];
+        char ANSWER[1021];
+        char SUGGESTION1[1021];
+        char SUGGESTION2[1021];
+        char SUGGESTION3[1021];
+    } tQUESTION;
+
+    typedef struct {
+        int ID;
+        char CATEGORY[1021];
+        char QUESTION[1021];
+        char ANSWER[1021];
+        char SUGGESTION1[1021];
+        char SUGGESTION2[1021];
+        char SUGGESTION3[1021];
+    } tQUESTION_CATEGORY;
+
+EXEC SQL END DECLARE SECTION;
+
+void print_qtable_error(void) {
+    attron(COLOR_PAIR(2));
+    mvprintw(0, 0, "%s", sqlca.sqlerrm.sqlerrmc);
+    attroff(COLOR_PAIR(2));
+    refresh();
+    getch();
+    EXEC SQL ROLLBACK;
+}
+
+EXEC SQL WHENEVER SQLERROR CALL print_qtable_error();
+
+QuestionTable::QuestionTable(void) {
+    EXEC SQL DECLARE question_cur SCROLL CURSOR WITH HOLD FOR
+        SELECT
+            q."ID",
+            c."NAME",
+            q."QUESTION",
+            q."ANSWER",
+            q."SUGGESTION1",
+            q."SUGGESTION2",
+            q."SUGGESTION3"
+        FROM "QUESTIONS" q
+            LEFT JOIN "CATEGORIES" c
+                ON q."CID"=c."ID"
+        ORDER BY q."ID" ASC;
+    EXEC SQL OPEN question_cur;
+
+    getmaxyx(stdscr, max_height, max_width);
+    row_count = max_height - 3;
+    items = new ITEM* [row_count + 1]();
+
+    stringstream ss;
+    ss << setw(4) << right << "ID";
+    ss << "  " << setw(10) << left << "CATEGORY";
+    ss << "  " << setw(max_width - 20) << "QUESTION";
+    header = ss.str();
+
+    menu = new_menu(items);
+    menu_opts_off(menu, O_SHOWDESC);
+    set_menu_mark(menu, "");
+
+    window = newwin(max_height, max_width, 0, 0);
+    subwin = derwin(window, max_height - 3, max_width - 2, 2, 1);
+
+    wbkgd(window, COLOR_PAIR(3));
+    wbkgd(subwin, COLOR_PAIR(3));
+
+    set_menu_win(menu, window);
+    set_menu_sub(menu, subwin);
+
+    update_items(true);
+}
+
+void QuestionTable::update_items(bool forward) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        const unsigned int MAX_FETCH_SIZE = row_count;
+        const unsigned int MAX_FETCH_SIZE2 = row_count - 1;
+        signed int move = 0;
+        tQUESTION_CATEGORY rec = { 0 };
+        tQUESTION_CATEGORY* recs;
+    EXEC SQL END DECLARE SECTION;
+
+    recs = new tQUESTION_CATEGORY[row_count]();
+
+    if (forward) {
+        EXEC SQL FETCH NEXT FROM question_cur INTO :rec;
+
+        if (rec.ID != 0) {
+            EXEC SQL MOVE BACKWARD question_cur;
+            EXEC SQL FETCH FORWARD :MAX_FETCH_SIZE FROM question_cur INTO :recs;
+
+            rows.clear();
+
+            // free old items
+            for (unsigned int i = 0; i < row_count; i++) {
+                free_item(items[i]);
+            }
+
+            unsigned int i;
+            for (i = 0; i < row_count; i++) {
+                if (recs[i].ID == 0) {
+                    EXEC SQL MOVE BACKWARD question_cur;
+                    break;
+                }
+
+                stringstream ss;
+                string id(to_string(recs[i].ID));
+                ss << setw(4) << right << recs[i].ID;
+                ss << "  " << setw(10) << left << utf8_substr(string(recs[i].CATEGORY), 0, 10);
+                ss << "  " << setw(max_width - 20) << utf8_substr(string(recs[i].QUESTION), 0, max_width - 20);
+
+                rows.insert(pair<string, string>(id, ss.str()));
+                items[i] = new_item(rows.find(id)->second.data(), rows.find(id)->first.data());
+            }
+            items[i] = { 0 };
+
+            set_menu_items(menu, items);
+            set_menu_format(menu, max_height - 3, 1);
+        } else {
+            EXEC SQL MOVE BACKWARD question_cur;
+        }
+    } else {
+        move = -item_count(menu);
+        EXEC SQL FETCH RELATIVE :move FROM question_cur INTO :rec;
+
+        if (rec.ID != 0) {
+            EXEC SQL MOVE FORWARD question_cur;
+            EXEC SQL FETCH BACKWARD :MAX_FETCH_SIZE FROM question_cur INTO :recs;
+            EXEC SQL MOVE FORWARD :MAX_FETCH_SIZE2 question_cur;
+
+            rows.clear();
+
+            // free old items
+            for (unsigned int i = 0; i < row_count; i++) {
+                free_item(items[i]);
+            }
+
+            for (unsigned int i = 0; i < row_count; i++) {
+                stringstream ss;
+                string id(to_string(recs[i].ID));
+                ss << setw(4) << right << recs[i].ID;
+                ss << "  " << setw(10) << left << utf8_substr(string(recs[i].CATEGORY), 0, 10);
+                ss << "  " << setw(max_width - 20) << utf8_substr(string(recs[i].QUESTION), 0, max_width - 20);
+
+                rows.insert(pair<string, string>(id, ss.str()));
+                items[row_count - 1 - i] = new_item(rows.find(id)->second.data(), rows.find(id)->first.data());
+            }
+
+            set_menu_items(menu, items);
+            set_menu_format(menu, max_height - 3, 1);
+        } else {
+            move = -move;
+            EXEC SQL FETCH RELATIVE :move FROM question_cur INTO :rec;
+        }
+    }
+
+    delete recs;
+}
+
+QuestionTable::~QuestionTable(void) {
+    EXEC SQL CLOSE question_cur;
+
+    unpost_menu(menu);
+    delwin(subwin);
+    delwin(window);
+    free_menu(menu);
+    for (unsigned int i = 0; i < row_count; i++) {
+        free_item(items[i]);
+    }
+    delete[] items;
+}
+
+void QuestionTable::run(void) {
+    box(window, 0, 0);
+    wattron(window, COLOR_PAIR(9));
+    mvwaddstr(window, 1, 1, header.data());
+    wattroff(window, COLOR_PAIR(9));
+
+    post_menu(menu);
+    refresh();
+    wrefresh(window);
+    bool running = true;
+    int input;
+    while (running && (input = getch())) {
+        switch (input) {
+            case KEY_DOWN:
+                if (item_index(current_item(menu)) < item_count(menu) - 1) {
+                    menu_driver(menu, REQ_DOWN_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(true);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_FIRST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case KEY_UP:
+                if (item_index(current_item(menu)) > 0) {
+                    menu_driver(menu, REQ_UP_ITEM);
+                    wrefresh(window);
+                } else {
+                    unpost_menu(menu);
+                    update_items(false);
+                    post_menu(menu);
+                    menu_driver(menu, REQ_LAST_ITEM);
+                    wrefresh(window);
+                }
+                break;
+            case 0x0A: {
+                int id = stoi(item_description(current_item(menu)));
+                update(id);
+                break;
+            }
+            case KEY_DC:
+                if (dialog.prompt()) {
+                    int id = stoi(item_description(current_item(menu)));
+                    del(id);
+                }
+                touchwin(window);   
+                wrefresh(window);
+                break;
+            case 0x4e:
+            case 0x6e:
+                insert();
+                break;
+            case 0x51:
+            case 0x71:
+                clear();
+                return;
+        }
+    }
+}
+
+void QuestionTable::del(int id) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        int pID = id;
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL DELETE FROM "QUESTIONS" WHERE "ID"=:pID;
+    EXEC SQL COMMIT;
+
+    EXEC SQL CLOSE question_cur;
+    EXEC SQL OPEN question_cur;
+
+    // Delete old item entries
+    for (unsigned int i = 0; i < row_count; i++) {
+        free_item(items[i]);
+        items[i] = { 0 };
+    }
+
+    unpost_menu(menu);
+    update_items(true);
+    post_menu(menu);
+    wrefresh(window);
+}
+
+void QuestionTable::update(int id) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        int pID = id;
+        tQUESTION rec = { 0 };
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL SELECT * INTO :rec FROM "QUESTIONS" WHERE "ID"=:pID;
+    char* options[] = {
+        rec.ANSWER,
+        rec.SUGGESTION1,
+        rec.SUGGESTION2,
+        rec.SUGGESTION3
+    };
+    QuestionForm form(rec.QUESTION, options, &rec.CID, false);
+
+    if (rec.QUESTION[0] != 0 && 
+        rec.CID != 0 &&
+        rec.ANSWER[0] != 0 &&
+        rec.SUGGESTION1[0] != 0 &&
+        rec.SUGGESTION2[0] != 0 &&
+        rec.SUGGESTION3[0] != 0) {
+
+        EXEC SQL UPDATE "QUESTIONS"
+            SET
+                "CID"=:rec.CID,
+                "QUESTION"=:rec.QUESTION,
+                "ANSWER"=:rec.ANSWER,
+                "SUGGESTION1"=:rec.SUGGESTION1,
+                "SUGGESTION2"=:rec.SUGGESTION2,
+                "SUGGESTION3"=:rec.SUGGESTION3
+            WHERE "ID"=:pID;
+        EXEC SQL COMMIT;
+
+        EXEC SQL CLOSE question_cur;
+        EXEC SQL OPEN question_cur;
+
+        // Delete old item entries
+        for (unsigned int i = 0; i < row_count; i++) {
+            free_item(items[i]);
+            items[i] = { 0 };
+        }
+
+        unpost_menu(menu);
+        update_items(true);
+        post_menu(menu);
+    }
+    touchwin(window);
+    wrefresh(window);
+}
+
+void QuestionTable::insert(void) {
+    EXEC SQL BEGIN DECLARE SECTION;
+        tQUESTION rec = { 0 };
+    EXEC SQL END DECLARE SECTION;
+
+    char* options[] = {
+        rec.ANSWER,
+        rec.SUGGESTION1,
+        rec.SUGGESTION2,
+        rec.SUGGESTION3
+    };
+    QuestionForm form(rec.QUESTION, options, &rec.CID, true);
+
+    if (rec.QUESTION[0] != 0 && 
+        rec.CID != 0 &&
+        rec.ANSWER[0] != 0 &&
+        rec.SUGGESTION1[0] != 0 &&
+        rec.SUGGESTION2[0] != 0 &&
+        rec.SUGGESTION3[0] != 0) {
+
+        EXEC SQL INSERT INTO "QUESTIONS"
+            (
+                "CID",
+                "QUESTION",
+                "ANSWER",
+                "SUGGESTION1",
+                "SUGGESTION2",
+                "SUGGESTION3"
+            ) VALUES(
+                :rec.CID,
+                :rec.QUESTION,
+                :rec.ANSWER,
+                :rec.SUGGESTION1,
+                :rec.SUGGESTION2,
+                :rec.SUGGESTION3
+            );
+        EXEC SQL COMMIT;
+
+        EXEC SQL CLOSE question_cur;
+        EXEC SQL OPEN question_cur;
+
+        // Delete old item entries
+        for (unsigned int i = 0; i < row_count; i++) {
+            free_item(items[i]);
+            items[i] = { 0 };
+        }
+
+        unpost_menu(menu);
+        update_items(true);
+        post_menu(menu);
+    }
+    touchwin(window);
+    wrefresh(window);
+}

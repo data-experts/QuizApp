@@ -1,0 +1,80 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="de.hwr_berlin.quizapp.activities.fragments.GameScoreFragment">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" >
+
+        <TextView
+            android:id="@+id/text_congrats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/text_congrats"
+            android:textSize="30sp"
+            android:textAllCaps="true"
+            android:textAlignment="center" />
+
+        <TextView
+            android:id="@+id/fragment_game_score_txt_score"
+            android:transitionName="fragment_game_score_gs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="60sp"
+            android:textStyle="bold"
+            android:textAllCaps="true"
+            android:textAlignment="center"
+            android:layout_below="@id/text_congrats" />
+
+        <EditText
+            android:id="@+id/score_input_user_name"
+            android:layout_width="225dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/fragment_game_score_txt_score"
+            android:layout_marginTop="20dp"
+            android:inputType="textPersonName"
+            android:singleLine="true"
+            android:hint="@string/hint_input_name"
+            android:layout_centerHorizontal="true"
+            android:textAlignment="center" />
+
+        <Button
+            android:id="@+id/btn_upload_score"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/score_input_user_name"
+            android:layout_marginTop="10dp"
+            android:text="@string/btn_submit_highscore"
+            android:layout_centerHorizontal="true"
+            android:minWidth="125dp"
+            android:nestedScrollingEnabled="false" />
+
+        <Button
+            android:id="@+id/btn_share_score"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btn_upload_score"
+            android:layout_marginTop="10dp"
+            android:text="@string/btn_share_highscore"
+            android:layout_centerHorizontal="true"
+            android:minWidth="125dp"
+            android:nestedScrollingEnabled="false" />
+
+        <Button
+            android:id="@+id/btn_back_main"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btn_share_score"
+            android:layout_marginTop="10dp"
+            android:text="@string/btn_back_to_main_menu"
+            android:layout_centerHorizontal="true"
+            android:minWidth="125dp"
+            android:nestedScrollingEnabled="false" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

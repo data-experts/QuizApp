@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:weightSum="100">
+
+    <TextView
+        android:id="@+id/current_position"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:paddingLeft="16dp"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:textSize="@dimen/txt_highscore_position"
+        android:layout_weight="20"/>
+
+    <TextView
+        android:id="@+id/username"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:paddingRight="16dp"
+        android:paddingLeft="16dp"
+        android:textSize="@dimen/txt_highscore_name"
+        android:layout_weight="60"/>
+
+    <TextView
+        android:id="@+id/txt_score"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:paddingRight="16dp"
+        android:layout_weight="20"/>
+
+</LinearLayout>
